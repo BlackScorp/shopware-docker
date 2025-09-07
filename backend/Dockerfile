@@ -1,6 +1,8 @@
 ARG ALPINE_VERSION=${ALPINE_VERSION:-latest}
 ARG NODE_VERSION=${NODE_VERSION:-23}
 FROM node:${NODE_VERSION}-alpine AS node-binaries
+RUN npm cache clean --force
+
 FROM alpine:$ALPINE_VERSION
 ARG ENV=${ENV:-production}
 ARG PHP_VERSION=${PHP_VERSION:-84}
@@ -14,54 +16,65 @@ ENV HOME=/var/www
 ENV NPM_CONFIG_PREFIX=$HOME/.npm
 ENV PATH=$NPM_CONFIG_PREFIX/bin:$PATH:
 
-RUN apk -U upgrade \
+# Build-Dependencies nur für das Kompilieren
+RUN apk add --no-cache --virtual .build-deps \
+        gcc \
+        make \
+        autoconf \
+        linux-headers \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
+        libzip-dev \
+        openssl-dev \
     && apk add --no-cache \
-     openrc-dev \
-    linux-headers \
-     gcc \
-     freetype-dev \
-     libjpeg-turbo-dev \
-     libpng-dev \
-     libzip-dev \
-     openssl-dev \
-     nginx \
-     su-exec \
-     bash \
-     curl \
-     xdg-utils \
-     npm \
-     php${PHP_VERSION}-fpm \
-     php${PHP_VERSION}-curl \
-     php${PHP_VERSION}-bcmath \
-     php${PHP_VERSION}-ctype \
-     php${PHP_VERSION}-ffi \
-     php${PHP_VERSION}-fileinfo \
-     php${PHP_VERSION}-gd \
-     php${PHP_VERSION}-gmp \
-     php${PHP_VERSION}-gettext \
-     php${PHP_VERSION}-intl \
-     php${PHP_VERSION}-mbstring \
-     php${PHP_VERSION}-mysqli \
-     php${PHP_VERSION}-openssl \
-     php${PHP_VERSION}-pdo \
-     php${PHP_VERSION}-pdo_mysql \
-     php${PHP_VERSION}-pdo_sqlite \
-     php${PHP_VERSION}-phar \
-     php${PHP_VERSION}-iconv \
-     php${PHP_VERSION}-simplexml \
-    php${PHP_VERSION}-xml \
-    php${PHP_VERSION}-xmlreader \
-     php${PHP_VERSION}-xmlwriter \
-     php${PHP_VERSION}-zip \
-     php${PHP_VERSION}-calendar \
-     php${PHP_VERSION}-common \
-     php${PHP_VERSION}-session \
-     php${PHP_VERSION}-sodium \
-     php${PHP_VERSION}-tokenizer \
-     php${PHP_VERSION}-dev \
-      php${PHP_VERSION}-pecl-xdebug
+          php${PHP_VERSION}-dev \
+        php${PHP_VERSION}-fpm \
+        php${PHP_VERSION}-curl \
+        php${PHP_VERSION}-bcmath \
+        php${PHP_VERSION}-gd \
+        php${PHP_VERSION}-mysqli \
+        php${PHP_VERSION}-openssl \
+        php${PHP_VERSION}-pdo \
+        php${PHP_VERSION}-pdo_mysql \
+        php${PHP_VERSION}-pdo_sqlite \
+        php${PHP_VERSION}-zip \
+        php${PHP_VERSION}-intl \
+        php${PHP_VERSION}-mbstring \
+        php${PHP_VERSION}-fileinfo \
+        php${PHP_VERSION}-ffi \
+        php${PHP_VERSION}-gettext \
+        php${PHP_VERSION}-ctype \
+        php${PHP_VERSION}-phar \
+        php${PHP_VERSION}-xml \
+        php${PHP_VERSION}-xmlwriter \
+        php${PHP_VERSION}-xmlreader \
+        php${PHP_VERSION}-simplexml \
+        php${PHP_VERSION}-tokenizer \
+        php${PHP_VERSION}-common \
+        php${PHP_VERSION}-session \
+        php${PHP_VERSION}-sodium \
+        php${PHP_VERSION}-pecl-xdebug \
+        php${PHP_VERSION}-calendar \
+        php${PHP_VERSION}-iconv \
+        freetype \
+        libjpeg-turbo \
+        libpng \
+        libzip \
+        openssl \
+        bash \
+        curl \
+        xdg-utils \
+        nginx \
+    && apk del .build-deps
+
 
 COPY --from=node-binaries /usr/local/bin/node /usr/local/bin/
+COPY --from=node-binaries /usr/local/bin/npm /usr/local/bin/
+COPY --from=node-binaries /usr/local/bin/npx /usr/local/bin/
+COPY --from=node-binaries /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+
+
 
 RUN addgroup \
      --gid "$GID" \
@@ -81,11 +94,11 @@ RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && chmod a+x composer.phar \
      && mv composer.phar /usr/local/bin/composer \
      && mkdir -p /usr/local/etc/php \
-     && ln -s /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
-     && ln -s /etc/php${PHP_VERSION}/conf.d /usr/local/etc/php \
-     && rm -rf /usr/bin/php \
-     && ln -s /usr/bin/php${PHP_VERSION} /usr/bin/php \
+     && ln -sf /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
+     && ln -sf /etc/php${PHP_VERSION}/conf.d /usr/local/etc/php \
+     && ln -sf /usr/bin/php${PHP_VERSION} /usr/bin/php \
      && chown -R $USER:$GROUPNAME $HOME
+
 
 ADD entrypoint.sh /entrypoint.sh
 

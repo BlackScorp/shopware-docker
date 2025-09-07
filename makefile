@@ -1,20 +1,25 @@
 .PHONY: help
 .DEFAULT_GOAL := help
 
-PROJECT:=shopware
-DOMAIN:=localhost
-HTTP_SCHEME=http
-SW_VERSION:=6.7.2.0
-PHP_VERSION:=84
-NODE_VERSION:=22
-MARIADB_VERSION:=latest
+ENV_FILE_BASE := .env
+ENV_FILE_LOCAL := .env.local
+ENV_FILE_VERSION := vars/$(SHOPWARE_VERSION).env
 
-DOCKER_RUN_COMMAND = PROJECT=$(PROJECT) DOMAIN=$(DOMAIN) SW_VERSION=$(SW_VERSION) PHP_VERSION=$(PHP_VERSION) NODE_VERSION=$(NODE_VERSION) MARIADB_VERSION=$(MARIADB_VERSION) docker compose up  --pull always -d
+# -----------------------------
+# Funktion zum Laden einer Env-Datei
+# -----------------------------
+load-env = $(if $(wildcard $(1)), \
+    $(foreach line,$(shell grep -v '^#' $(1)), \
+        $(eval export $(line)) \
+    ) \
+)
 
-ENV_FILE := vars/$(SW_VERSION).env
-ifneq ("$(wildcard $(ENV_FILE))","")
-    include $(ENV_FILE)
-endif
+$(call load-env,$(ENV_FILE_BASE))
+$(call load-env,$(ENV_FILE_VERSION))
+$(call load-env,$(ENV_FILE_LOCAL))
+
+DOCKER_RUN_COMMAND = docker compose up  --pull always -d
+
 
 help:
 	@echo "Shopware Setup"

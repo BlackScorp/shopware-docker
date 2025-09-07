@@ -68,7 +68,8 @@ RUN apk add --no-cache --virtual .build-deps \
         nginx \
     && apk del .build-deps
 
-COPY --from=node-binaries /usr/local /usr/local
+COPY --from=node-binaries /usr/local/bin /usr/local/bin
+COPY --from=node-binaries /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 RUN addgroup \
      --gid "$GID" \
@@ -104,5 +105,6 @@ RUN chmod a+x /entrypoint.sh \
 USER $USER
 
 WORKDIR $HOME/html
-RUN composer create-project shopware/production:$SW_VERSION . --no-scripts
+RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache
+RUN rm -rf /var/cache/apk/* $HOME/.npm /tmp/*
 CMD /entrypoint.sh

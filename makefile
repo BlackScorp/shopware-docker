@@ -35,6 +35,7 @@ help:
 	@echo "PHP_VERSION=$(PHP_VERSION)"
 	@echo "NODE_VERSION=$(NODE_VERSION)"
 	@echo "MARIADB_VERSION=$(MARIADB_VERSION)"
+	@echo "ALPINE_VERSION=$(ALPINE_VERSION)"
 	@echo "PROJECT COMMANDS"
 	@echo "--------------------------------------------------------------------------------------------"
 	@printf "\033[33mInstallation:%-30s\033[0m %s\n"

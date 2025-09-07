@@ -1,0 +1,81 @@
+name: ${PROJECT:-shopware}
+services:
+  proxy:
+    image: nginx:${NGINX_VERSION:-alpine}
+    container_name: proxy
+    labels:
+      - "project=${PROJECT}"
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - network
+    working_dir: /var/www/html
+    depends_on:
+      - backend
+    environment:
+      - DOCUMENT_ROOT=${DOCUMENT_ROOT:-/var/www/html/public}
+      - DOMAIN=${DOMAIN:-localhost}
+      - BACKEND_URL=${BACKEND_URL:-http://backend}
+    volumes:
+      - shop:/var/www/html:consistent
+      - ./config/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+  backend:
+    container_name: backend
+    stop_grace_period: 1s
+    labels:
+      - "project=${PROJECT}"
+    ports:
+      - 9999:9999 #storefront assets port
+      - 9998:9998 #storefront watcher
+
+      - 8888:8888 #admin port
+      - 5333-5350:5333-5350 #plugin ports
+    build:
+      context: ./backend
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+        ENV: ${ENV:-dev}
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+        SW_VERSION: ${SW_VERSION:-6.7.2.0}
+        NODE_VERSION: ${NODE_VERSION:-23}
+    working_dir: /var/www/html
+    depends_on:
+      - database
+    networks:
+      - network
+    volumes:
+      - ./../AdvancedDataManager:/var/www/html/custom/plugins/AdvancedDataManager:consistent
+      -  shop:/var/www/html:consistent
+      - ./config/default.conf:/etc/nginx/http.d/default.conf
+      - ./config/php-ini-overrides.ini:/usr/local/etc/php/conf.d/extra.ini
+  database:
+    image: mariadb:${MARIADB_VERSION:-latest}
+    container_name: database
+    labels:
+      - "project=${PROJECT}"
+    networks:
+      - network
+    ports:
+      - ${DB_PUBLIC_PORT:-3306}:3306
+    environment:
+      - MYSQL_USER=${MYSQL_USER:-dev}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-dev}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-dev}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-shopware}
+    volumes:
+      - database:/var/lib/mysql
+
+
+networks:
+  network:
+    labels:
+      - "project=${PROJECT}"
+
+volumes:
+  database:
+    labels:
+      - "project=${PROJECT}"
+  shop:
+    labels:
+      - "project=${PROJECT}"

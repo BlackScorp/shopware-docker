@@ -1,24 +1,31 @@
 .PHONY: help
 .DEFAULT_GOAL := help
 
-ENV_FILE_BASE := .env
-ENV_FILE_LOCAL := .env.local
-ENV_FILE_VERSION := vars/$(SHOPWARE_VERSION).env
-
-# -----------------------------
-# Funktion zum Laden einer Env-Datei
-# -----------------------------
 load-env = $(if $(wildcard $(1)), \
     $(foreach line,$(shell grep -v '^#' $(1)), \
         $(eval export $(line)) \
     ) \
 )
 
+ENV_FILE_BASE := .env
+ENV_FILE_LOCAL := .env.local
 $(call load-env,$(ENV_FILE_BASE))
-$(call load-env,$(ENV_FILE_VERSION))
 $(call load-env,$(ENV_FILE_LOCAL))
+SW_MAJOR_VERSION := $(shell echo $(SW_VERSION) | cut -d. -f1,2)
+ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
+ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
+
+
+ifeq ($(wildcard $(ENV_FILE_VERSION_EXACT)),)
+    $(call load-env,$(ENV_FILE_VERSION_MAJOR))
+else
+    $(call load-env,$(ENV_FILE_VERSION_EXACT))
+endif
+
+
 
 DOCKER_RUN_COMMAND = docker compose up  --pull always -d
+
 
 
 help:

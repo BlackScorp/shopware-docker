@@ -29,6 +29,7 @@ RUN apk -U upgrade \
      bash \
      curl \
      xdg-utils \
+     npm \
      php${PHP_VERSION}-fpm \
      php${PHP_VERSION}-curl \
      php${PHP_VERSION}-bcmath \
@@ -61,11 +62,6 @@ RUN apk -U upgrade \
       php${PHP_VERSION}-pecl-xdebug
 
 COPY --from=node-binaries /usr/local/bin/node /usr/local/bin/
-COPY --from=node-binaries /usr/local/bin/corepack /usr/local/bin/
-COPY --from=node-binaries /usr/local/lib/node_modules /usr/local/lib/node_modules
-
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-     && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 RUN addgroup \
      --gid "$GID" \
@@ -84,15 +80,11 @@ RUN addgroup \
 RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && chmod a+x composer.phar \
      && mv composer.phar /usr/local/bin/composer \
-     && mkdir -p $NPM_CONFIG_PREFIX \
-     && chown -R $USER:$GROUPNAME $NPM_CONFIG_PREFIX \
-     && chown -R $USER:$GROUPNAME /usr/local \
      && mkdir -p /usr/local/etc/php \
      && ln -s /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
      && ln -s /etc/php${PHP_VERSION}/conf.d /usr/local/etc/php \
      && rm -rf /usr/bin/php \
      && ln -s /usr/bin/php${PHP_VERSION} /usr/bin/php \
-     && chmod a=rwx -R /usr/local \
      && chown -R $USER:$GROUPNAME $HOME
 
 ADD entrypoint.sh /entrypoint.sh

@@ -45,7 +45,6 @@ services:
     networks:
       - network
     volumes:
-      - ./../AdvancedDataManager:/var/www/html/custom/plugins/AdvancedDataManager:consistent
       -  shop:/var/www/html:consistent
       - ./config/default.conf:/etc/nginx/http.d/default.conf
       - ./config/php-ini-overrides.ini:/usr/local/etc/php/conf.d/extra.ini

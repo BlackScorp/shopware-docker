@@ -1,7 +1,7 @@
 .PHONY: help
 .DEFAULT_GOAL := help
 
-PROJECT:=datamanager
+PROJECT:=shopware
 DOMAIN:=localhost
 HTTP_SCHEME=http
 SW_VERSION:=6.7.2.0

@@ -68,13 +68,7 @@ RUN apk add --no-cache --virtual .build-deps \
         nginx \
     && apk del .build-deps
 
-
-COPY --from=node-binaries /usr/local/bin/node /usr/local/bin/
-COPY --from=node-binaries /usr/local/bin/npm /usr/local/bin/
-COPY --from=node-binaries /usr/local/bin/npx /usr/local/bin/
-COPY --from=node-binaries /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
-
-
+COPY --from=node-binaries /usr/local /usr/local
 
 RUN addgroup \
      --gid "$GID" \

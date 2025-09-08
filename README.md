@@ -34,5 +34,7 @@ you can add a .env file into vars folder for specific shopware version. here you
 the version requirements are defined here
 https://developer.shopware.com/docs/guides/installation/requirements.html
 
-## Known Issues
-Alpine latest does not have php 8.1, it is in different repository, if you need php 8.1 then you have to modify the docker file.
+## URLs
+Shopware Admin: http://localhost/admin
+Shopware Frontend: http://localhost
+Mailhog: http://localhost/mailer

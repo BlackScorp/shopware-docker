@@ -64,7 +64,13 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-shopware}
     volumes:
       - database:/var/lib/mysql
-
+  mailer:
+    image: mailhog/mailhog
+    container_name: mailer
+    networks:
+      - network
+    labels:
+      - "project=${PROJECT}"
 
 networks:
   network:

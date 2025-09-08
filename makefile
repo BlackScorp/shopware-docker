@@ -94,9 +94,12 @@ clean-docker:
 	docker volume rm $$(docker volume ls -q -f "label=com.docker.compose.project=$(PROJECT)") || true
 
 setup:
-	docker exec -it backend sh -c "echo DATABASE_URL=mysql://dev:dev@database/shopware > .env.local"
+	docker exec -it backend sh -c 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" > .env.local'
 	docker exec -it backend sh -c "echo APP_ENV=dev >> .env.local"
 	docker exec -it backend sh -c "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> .env.local"
+	docker exec -it backend sh -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> .env.local"
+	docker exec -it backend sh -c "echo MAILER_URL=smtp://mailer:1025 >> .env.local"
 	docker exec -it backend sh -c "bin/console cache:clear"
 	docker exec -it backend sh -c "bin/console system:install --drop-database --create-database --basic-setup -n -f"
+	docker exec -it backend sh -c 'bin/console system:config:set core.frw.completedAt "2025-01-01 10:00:00"'
 	make download-src

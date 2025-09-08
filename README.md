@@ -10,7 +10,13 @@ Clone the repo in your project
 git clone https://github.com/BlackScorp/shopware-docker.git docker
 cd docker
 ```
-edit the make file. set shopware version and project name
+create a file .env.local and set your project name and shopware version
+```
+#.env.local
+PROJECT=myawesomeproject
+SW_VERSION=6.7.0.0
+```
+the project name is used to label the docker container so they can be removed later with filters
 
 run command
 

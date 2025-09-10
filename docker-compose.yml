@@ -12,27 +12,26 @@ services:
       - network
     working_dir: /var/www/html
     depends_on:
-      - backend
+      - shop
     environment:
       - DOCUMENT_ROOT=${DOCUMENT_ROOT:-/var/www/html/public}
       - DOMAIN=${DOMAIN:-localhost}
-      - BACKEND_URL=${BACKEND_URL:-http://backend}
+      - BACKEND_URL=${BACKEND_URL:-http://shop}
     volumes:
       - shop:/var/www/html:consistent
       - ./config/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-  backend:
-    container_name: backend
+  shop:
+    container_name: shop
     stop_grace_period: 1s
     labels:
       - "project=${PROJECT}"
     ports:
       - 9999:9999 #storefront assets port
       - 9998:9998 #storefront watcher
-
-      - 8888:8888 #admin port
+      - 8080:8080 #admin port
       - 5333-5350:5333-5350 #plugin ports
     build:
-      context: ./backend
+      context: ./shop
       args:
         PHP_VERSION: ${PHP_VERSION:-8.4}
         ENV: ${ENV:-dev}

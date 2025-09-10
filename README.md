@@ -42,5 +42,7 @@ https://developer.shopware.com/docs/guides/installation/requirements.html
 
 ## URLs
 Shopware Admin: http://localhost/admin
+Admin Watcher: http://localhost:8080
 Shopware Frontend: http://localhost
+Storefront Watcher: http://localhost:9998
 Mailhog: http://localhost/mailer

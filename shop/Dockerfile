@@ -106,6 +106,5 @@ USER $USER
 
 WORKDIR $HOME/html
 RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache
-RUN npm i -g npx
 RUN rm -rf /var/cache/apk/* $HOME/.npm /tmp/*
 CMD /entrypoint.sh

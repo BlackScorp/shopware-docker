@@ -25,7 +25,7 @@ endif
 
 
 DOCKER_RUN_COMMAND = docker compose up  --pull always -d
-DOCKER_BACKEND_EXEC_COMMAND = docker exec -it backend sh -c
+DOCKER_BACKEND_EXEC_COMMAND = docker exec -it shop sh -c
 
 
 help:
@@ -63,17 +63,30 @@ run: ##1 command start container
 
 
 ssh: ##2 quick access into container
-	docker exec -it backend sh
+	docker exec -it shop sh
 
 
 download-src: ##2 downloads the vendor code for code completion
-	docker cp backend:/var/www/html/vendor ./../
+	docker cp shop:/var/www/html/vendor ./../
 
 watch-admin: ##2 start admin watcher
-	docker exec -it backend sh -c "bin/watch-administration.sh"
+ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+	docker exec -it shop sh -c "APP_URL=http://shop HOST=0.0.0.0 bin/watch-administration.sh"
+else ifeq($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
+	docker exec -it shop sh -c "ADMIN_PORT=8080 HOST=0.0.0.0 bin/watch-administration.sh"
+else
+	docker exec -it shop sh -c "HOST=0.0.0.0 bin/watch-administration.sh"
+endif
+
 
 watch-sf: ##2 start storefront wathcer
-	docker exec -it backend sh -c "bin/watch-storefront.sh"
+ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+	docker exec -it shop sh -c "IPV4FIRST=1 bin/watch-storefront.sh"#
+else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
+	docker exec -it shop sh -c "VITE_EXTENSIONS_SERVER_HOST=$(DOMAIN) VITE_EXTENSIONS_SERVER_SCHEME=$(HTTP_SCHEME) bin/watch-storefront.sh"
+else
+	docker exec -it shop sh -c "bin/watch-storefront.sh"
+endif
 
 
 #------------ private commands
@@ -95,26 +108,23 @@ clean-docker:
 	docker volume rm $$(docker volume ls -q -f "label=com.docker.compose.project=$(PROJECT)") || true
 
 setup:
-	$(DOCKER_BACKEND_EXEC_COMMAND) 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" > .env.local'
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo APP_ENV=dev >> .env.local"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "echo APP_ENV=dev > .env.local"
 	$(DOCKER_BACKEND_EXEC_COMMAND) "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> .env.local"
 	$(DOCKER_BACKEND_EXEC_COMMAND) "echo DATABASE_URL=mysql://dev:dev@database/shopware >> .env.local"
+	$(DOCKER_BACKEND_EXEC_COMMAND) 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" >> .env.local'
 ifeq ($(filter $(SW_MAJOR_VERSION),6.4),$(SW_MAJOR_VERSION))
 	$(DOCKER_BACKEND_EXEC_COMMAND) "echo MAILER_URL=smtp://mailer:1025 >> .env.local"
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo PORT=8888 >> .env.local"
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo HOST=0.0.0.0 >> .env.local"
 	$(DOCKER_BACKEND_EXEC_COMMAND) "cp .env.local .env"
-else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo ADMIN_PORT=8888 >> .env.local"
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo VITE_EXTENSIONS_SERVER_HOST=$(DOMAIN) >> .env.local"
-	$(DOCKER_BACKEND_EXEC_COMMAND) "echo VITE_EXTENSIONS_SERVER_SCHEME=$(HTTP_SCHEME) >> .env.local"
 else
 	$(DOCKER_BACKEND_EXEC_COMMAND) "echo MAILER_DSN=smtp://mailer:1025 >> .env.local"
 endif
 	make cc
-	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/console system:install --drop-database --create-database --basic-setup -n -f"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/console system:install --drop-database --create-database --basic-setup -n --no-debug -f"
 	$(DOCKER_BACKEND_EXEC_COMMAND) 'bin/console system:config:set core.frw.completedAt "2025-01-01 01:01:01" -q'
-	$(DOCKER_BACKEND_EXEC_COMMAND) "npx update-browserslist-db@latest"
-	$(DOCKER_BACKEND_EXEC_COMMAND) "npx browserslist@latest --update-db"
+ifeq ($(filter $(SW_MAJOR_VERSION),6.4),$(SW_MAJOR_VERSION))
 	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/build-js.sh"
+endif
+ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/build-storefront.sh"
+endif
 	make download-src

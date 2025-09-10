@@ -24,8 +24,12 @@ run command
 make build
 ``
 this command will build a docker container with shopware installed.
-
-now mount your plugin folder into the backend container in the docker-compose.yml file.
+create a composer.override.yaml file with your own volumes in shop.
+``
+#example composer.override.yaml
+volumes:
+  - ./myplugin:/var/www/html/custom/plugins/MyPlugin
+``
 and run the command
 ``
 make run

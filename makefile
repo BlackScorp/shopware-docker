@@ -99,7 +99,7 @@ endif
 
 #------------ private commands
 cc:
-	$(DOCKER_BACKEND_EXEC_COMMAND) "rm -rf var/cache && bin/console cache:clear --no-debug"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "rm -rf var/cache/* && bin/console cache:clear --no-debug"
 start-container:
 	$(DOCKER_RUN_COMMAND)
 

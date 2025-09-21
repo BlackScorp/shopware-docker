@@ -71,21 +71,29 @@ download-src: ##2 downloads the vendor code for code completion
 
 watch-admin: ##2 start admin watcher
 ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
-	docker exec -it shop sh -c "APP_URL=http://shop HOST=0.0.0.0 bin/watch-administration.sh"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "APP_URL=http://shop HOST=0.0.0.0 bin/watch-administration.sh"
 else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
-	docker exec -it shop sh -c "ADMIN_PORT=8080 HOST=0.0.0.0 bin/watch-administration.sh"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "ADMIN_PORT=8080 HOST=0.0.0.0 bin/watch-administration.sh"
 else
-	docker exec -it shop sh -c "HOST=0.0.0.0 bin/watch-administration.sh"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "HOST=0.0.0.0 bin/watch-administration.sh"
 endif
 
+build-admin: ##2 build administration
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/build-administration.sh"
 
-watch-sf: ##2 start storefront wathcer
+build-sf: ##2 build storefront
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/build-storefront.sh"
+
+build-js: ##2 build storefront and admin
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/build-js.sh"
+
+watch-sf: ##2 start storefront watcher
 ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
-	docker exec -it shop sh -c "IPV4FIRST=1 bin/watch-storefront.sh"#
+	$(DOCKER_BACKEND_EXEC_COMMAND) "IPV4FIRST=1 bin/watch-storefront.sh"
 else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
-	docker exec -it shop sh -c "VITE_EXTENSIONS_SERVER_HOST=$(DOMAIN) VITE_EXTENSIONS_SERVER_SCHEME=$(HTTP_SCHEME) bin/watch-storefront.sh"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "VITE_EXTENSIONS_SERVER_HOST=$(DOMAIN) VITE_EXTENSIONS_SERVER_SCHEME=$(HTTP_SCHEME) bin/watch-storefront.sh"
 else
-	docker exec -it shop sh -c "bin/watch-storefront.sh"
+	$(DOCKER_BACKEND_EXEC_COMMAND) "bin/watch-storefront.sh"
 endif
 
 

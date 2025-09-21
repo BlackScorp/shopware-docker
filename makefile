@@ -72,7 +72,7 @@ download-src: ##2 downloads the vendor code for code completion
 watch-admin: ##2 start admin watcher
 ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
 	docker exec -it shop sh -c "APP_URL=http://shop HOST=0.0.0.0 bin/watch-administration.sh"
-else ifeq($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
+else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
 	docker exec -it shop sh -c "ADMIN_PORT=8080 HOST=0.0.0.0 bin/watch-administration.sh"
 else
 	docker exec -it shop sh -c "HOST=0.0.0.0 bin/watch-administration.sh"

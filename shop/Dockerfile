@@ -64,6 +64,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssl \
         bash \
         curl \
+        git \
         xdg-utils \
         nginx \
     && apk del .build-deps

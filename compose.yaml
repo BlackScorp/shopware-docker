@@ -20,9 +20,12 @@ services:
     volumes:
       - shop:/var/www/html:consistent
       - ./config/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    pull_policy: always
+    stop_grace_period: 1s
   shop:
     container_name: shop
     stop_grace_period: 1s
+    pull_policy: always
     labels:
       - "project=${PROJECT}"
     ports:
@@ -50,6 +53,8 @@ services:
   database:
     image: mariadb:${MARIADB_VERSION:-latest}
     container_name: database
+    stop_grace_period: 1s
+    pull_policy: always
     labels:
       - "project=${PROJECT}"
     networks:
@@ -66,6 +71,8 @@ services:
   mailer:
     image: schickling/mailcatcher
     container_name: mailer
+    stop_grace_period: 1s
+    pull_policy: always
     networks:
       - network
     labels:

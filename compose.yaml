@@ -23,7 +23,7 @@ services:
     pull_policy: always
     stop_grace_period: 1s
   shop:
-    container_name: shop
+    container_name: ${SHOP_CONTAINER}
     stop_grace_period: 1s
     pull_policy: always
     labels:

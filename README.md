@@ -44,9 +44,28 @@ you can add a .env file into vars folder for specific shopware version. here you
 the version requirements are defined here
 https://developer.shopware.com/docs/guides/installation/requirements.html
 
+## Hooks
+
+you can add custom hook as makefiles into folder hooks. and trigger your own code after build or install
+there currently following hooks
+
+- HOOK_BUILD: is triggered after make build command is finished
+- HOOK_START: is triggered after make HOOK_BUILD and when make run command is executed
+
+this is an example hook script
+``
+#file hooks/my-hook.local.mk
+
+HOOK_START += say-hello-on-start
+
+.PHONY: say-hello-on-start
+
+say-hello-on-start:
+    @echo "Hello"
+``
 ## URLs
 Shopware Admin: http://localhost/admin
 Admin Watcher: http://localhost:8080
 Shopware Frontend: http://localhost
 Storefront Watcher: http://localhost:9998
-Mailhog: http://localhost/mailer
+Mailcatcher: http://localhost/mailer

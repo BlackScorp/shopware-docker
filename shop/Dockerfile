@@ -19,7 +19,6 @@ ENV PATH=$NPM_CONFIG_PREFIX/bin:$PATH:
 # Build-Dependencies nur für das Kompilieren
 RUN apk add --no-cache --virtual .build-deps \
         gcc \
-        make \
         autoconf \
         linux-headers \
         freetype-dev \
@@ -67,6 +66,8 @@ RUN apk add --no-cache --virtual .build-deps \
         git \
         xdg-utils \
         nginx \
+        make \
+        zip \
     && apk del .build-deps
 
 COPY --from=node-binaries /usr/local/bin /usr/local/bin

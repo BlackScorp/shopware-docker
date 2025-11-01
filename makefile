@@ -5,7 +5,9 @@ ENV_FILE_BASE := .env
 ENV_FILE_LOCAL := .env.local
 -include $(ENV_FILE_BASE) $(ENV_FILE_LOCAL)
 
-SW_MAJOR_VERSION := $(shell echo $(SW_VERSION) | cut -d. -f1,2)
+SW_MAJOR_VERSION := $(strip $(shell echo $(SW_VERSION) | cut -d. -f1,2))
+
+
 ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
 ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
 
@@ -22,6 +24,16 @@ DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 hook-start: $(HOOK_START)
 hook-build: $(HOOK_BUILD)
 
+IS_SW_64 :=$(filter 6.4,$(SW_MAJOR_VERSION))
+IS_SW_65 :=$(filter 6.5,$(SW_MAJOR_VERSION))
+IS_SW_66 :=$(filter 6.6,$(SW_MAJOR_VERSION))
+IS_SW_67 :=$(filter 6.7,$(SW_MAJOR_VERSION))
+
+
+SHOPWARE_ENV_FILE := .env.local
+ifneq ($(IS_SW_64),)
+	SHOPWARE_ENV_FILE := .env
+endif
 
 
 help:
@@ -29,6 +41,8 @@ help:
 	@echo "Shopware Setup"
 	@echo "PROJECT=$(PROJECT)"
 	@echo "SW_VERSION=$(SW_VERSION)"
+	@echo "SW_MAJOR_VERSION=$(SW_MAJOR_VERSION)"
+	@echo "ENV_FILE=$(SHOPWARE_ENV_FILE)"
 	@echo "PHP_VERSION=$(PHP_VERSION)"
 	@echo "NODE_VERSION=$(NODE_VERSION)"
 	@echo "MARIADB_VERSION=$(MARIADB_VERSION)"
@@ -47,9 +61,9 @@ help:
 	@printf "\033[35mDevOps:%-30s\033[0m %s\n"
 	@grep -E '^[a-zA-Z_-]+:.*?##4 .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?##4 "}; {printf "\033[35m  - %-30s\033[0m %s\n", $$1, $$2}'
 
-build: ##1 build a docker container, needed when you change variables
+init: ##1 build a docker container, use this when you change shopware version or need a clean setup
 	make kill
-	make build-container
+	make build
 	make setup
 	make hook-build
 	make hook-start
@@ -76,9 +90,9 @@ download-vendor: ##2 downloads the vendor code for code completion
 	docker cp $(SHOP_CONTAINER):/var/www/html/vendor $(PROJECT_DIR)
 
 watch-admin: ##2 start admin watcher
-ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "APP_URL=http://$(SHOP_CONTAINER) HOST=0.0.0.0 bin/watch-administration.sh"
-else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
+else ifneq ($(IS_SW_67),)
 	$(DOCKER_BACKEND_COMMAND) -c "ADMIN_PORT=8080 VITE_HOST=0.0.0.0 HOST=0.0.0.0 bin/watch-administration.sh"
 else
 	$(DOCKER_BACKEND_COMMAND) -c "HOST=0.0.0.0 bin/watch-administration.sh"
@@ -94,9 +108,9 @@ build-js: ##2 build storefront and admin
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
 
 watch-sf: ##2 start storefront watcher
-ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "IPV4FIRST=1 bin/watch-storefront.sh"
-else ifeq ($(filter $(SW_MAJOR_VERSION),6.7),$(SW_MAJOR_VERSION))
+else ifneq ($(IS_SW_67),)
 	$(DOCKER_BACKEND_COMMAND) -c "VITE_EXTENSIONS_SERVER_HOST=$(DOMAIN) VITE_EXTENSIONS_SERVER_SCHEME=$(HTTP_SCHEME) bin/watch-storefront.sh"
 else
 	$(DOCKER_BACKEND_COMMAND) -c "bin/watch-storefront.sh"
@@ -108,7 +122,7 @@ cc: ##2 clear cache
 start: ##4 start docker container
 	$(DOCKER_RUN_COMMAND)
 
-build-container: ##4 build container
+build: ##4 build container
 	$(DOCKER_RUN_COMMAND) --build
 
 stop: ##4 stop container
@@ -121,26 +135,24 @@ kill: ##4 clear images and volumes
 	docker volume rm $$(docker volume ls -q -f "label=com.docker.compose.project=$(PROJECT)") || true
 
 setup: ##4 initial setup
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_ENV=dev > .env.local"
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> .env.local"
-	$(DOCKER_BACKEND_COMMAND) -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> .env.local"
-ifeq ($(filter $(SW_MAJOR_VERSION),6.4),$(SW_MAJOR_VERSION))
-	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_URL=smtp://mailer:1025 >> .env.local"
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> .env.local"
-	$(DOCKER_BACKEND_COMMAND) -c "mv .env.local .env"
+	$(DOCKER_BACKEND_COMMAND) -c "echo APP_ENV=dev > $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> $(SHOPWARE_ENV_FILE)"
+ifneq ($(IS_SW_64),)
+	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_URL=smtp://mailer:1025 >> $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_ROOT_BACKEND_COMMAND) -c "wget https://getcomposer.org/download/2.2.9/composer.phar && chmod a+x composer.phar && mv composer.phar /usr/local/bin/composer"
 else
-	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_DSN=smtp://mailer:1025 >> .env.local"
+	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_DSN=smtp://mailer:1025 >> $(SHOPWARE_ENV_FILE)"
 endif
 	make cc
 	$(DOCKER_BACKEND_COMMAND) -c "bin/console system:install --drop-database --create-database --basic-setup -n --no-debug -f"
-	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" >> .env.local'
+	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" >> $(SHOPWARE_ENV_FILE)'
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:config:set core.frw.completedAt "2025-01-01 01:01:01" -q'
-ifeq ($(filter $(SW_MAJOR_VERSION),6.4),$(SW_MAJOR_VERSION))
-	$(DOCKER_BACKEND_COMMAND) -c "rm -rf .env.local"
+ifneq ($(IS_SW_64),)
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
 endif
-ifeq ($(filter $(SW_MAJOR_VERSION),6.5),$(SW_MAJOR_VERSION))
+ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-storefront.sh"
 endif
 	make download-vendor

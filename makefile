@@ -14,7 +14,9 @@ ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
 -include $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT)
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) 2>/dev/null)
 
--include hooks/*.mk
+-include hooks/demo-data.mk
+-include hooks/*.local.mk
+-include hooks/merge-plugin.mk
 
 DOCKER_RUN_COMMAND = docker compose up -d
 DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
@@ -67,13 +69,14 @@ init: ##1 build a docker container, use this when you change shopware version or
 	make setup
 	make hook-build
 	make hook-start
-	open $(HTTP_SCHEME)://$(DOMAIN)
+	make download-vendor
+	make open
 
-run: ##1 command start container
+run: ##1 command start container, use this command if you already build the container
 	make stop
 	make start
 	make hook-start
-	open $(HTTP_SCHEME)://$(DOMAIN)
+	make open
 
 
 ssh: ##2 quick access into container
@@ -138,12 +141,13 @@ setup: ##4 initial setup
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_ENV=dev > $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> $(SHOPWARE_ENV_FILE)"
 ifneq ($(IS_SW_64),)
 	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_URL=smtp://mailer:1025 >> $(SHOPWARE_ENV_FILE)"
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_ROOT_BACKEND_COMMAND) -c "wget https://getcomposer.org/download/2.2.9/composer.phar && chmod a+x composer.phar && mv composer.phar /usr/local/bin/composer"
 else
 	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_DSN=smtp://mailer:1025 >> $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "composer require --dev shopware/dev-tools"
 endif
 	make cc
 	$(DOCKER_BACKEND_COMMAND) -c "bin/console system:install --drop-database --create-database --basic-setup -n --no-debug -f"
@@ -155,4 +159,7 @@ endif
 ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-storefront.sh"
 endif
-	make download-vendor
+
+open:
+	open $(HTTP_SCHEME)://$(DOMAIN)
+	open $(HTTP_SCHEME)://$(DOMAIN)/admin

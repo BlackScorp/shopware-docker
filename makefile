@@ -16,6 +16,8 @@ SW_MAJOR_VERSION := $(strip $(shell echo $(SW_VERSION) | cut -d. -f1,2))
 ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
 ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
 -include $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT)
+# this line exports the variables from env file so docker compose up use the correct variables
+export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
 
 # helper to check different SW versions
 IS_SW_64 :=$(filter 6.4,$(SW_MAJOR_VERSION))

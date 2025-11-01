@@ -1,45 +1,45 @@
 .PHONY: help hook-start hook-build
 .DEFAULT_GOAL := help
 
-ENV_FILE_BASE := .env
-ENV_FILE_LOCAL := .env.local
--include $(ENV_FILE_BASE) $(ENV_FILE_LOCAL)
-
-SW_MAJOR_VERSION := $(strip $(shell echo $(SW_VERSION) | cut -d. -f1,2))
-
-
-ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
-ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
-
--include $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT)
-export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) 2>/dev/null)
-
--include hooks/demo-data.mk
--include hooks/*.local.mk
--include hooks/merge-plugin.mk
-
+# base docker commands
 DOCKER_RUN_COMMAND = docker compose up -d
 DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
 DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 
+# variables from env files
+# we want to overwrite variables based on file priority
+# .env > .env.local > var/6.4.env > var/6.4.20.2.env  more specific file wins
+ENV_FILE_BASE := .env
+ENV_FILE_LOCAL := .env.local
+-include $(ENV_FILE_BASE) $(ENV_FILE_LOCAL)
+SW_MAJOR_VERSION := $(strip $(shell echo $(SW_VERSION) | cut -d. -f1,2))
+ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
+ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
+-include $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT)
 
-hook-start: $(HOOK_START)
-hook-build: $(HOOK_BUILD)
-
+# helper to check different SW versions
 IS_SW_64 :=$(filter 6.4,$(SW_MAJOR_VERSION))
 IS_SW_65 :=$(filter 6.5,$(SW_MAJOR_VERSION))
 IS_SW_66 :=$(filter 6.6,$(SW_MAJOR_VERSION))
 IS_SW_67 :=$(filter 6.7,$(SW_MAJOR_VERSION))
-
 
 SHOPWARE_ENV_FILE := .env.local
 ifneq ($(IS_SW_64),)
 	SHOPWARE_ENV_FILE := .env
 endif
 
+# hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
+ALPHA_HOOKS := $(wildcard hooks/[a-z]*.mk)
+NUM_HOOKS   := $(sort $(wildcard hooks/[0-9]*.mk))
+HOOKS := $(ALPHA_HOOKS) $(NUM_HOOKS)
+
+-include $(HOOKS)
+
+hook-start: $(HOOK_START)
+hook-build: $(HOOK_BUILD)
 
 help:
-	@echo $(MAKEFILE_LIST)
+	@echo "Included files: $(MAKEFILE_LIST)"
 	@echo "Shopware Setup"
 	@echo "PROJECT=$(PROJECT)"
 	@echo "SW_VERSION=$(SW_VERSION)"
@@ -126,7 +126,7 @@ start: ##4 start docker container
 	$(DOCKER_RUN_COMMAND)
 
 build: ##4 build container
-	$(DOCKER_RUN_COMMAND) --build
+	$(DOCKER_RUN_COMMAND) --build --wait #we need to wait until zip file is done
 
 stop: ##4 stop container
 	docker stop $$(docker ps -aq) || true

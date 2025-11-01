@@ -97,6 +97,14 @@ RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && chown -R $USER:$GROUPNAME $HOME
 
 
+USER $USER
+
+WORKDIR $HOME/html
+RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache  \
+    && zip -r $HOME/shopware.zip . && find . -mindepth 1 -delete && ls -la && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer && echo "INSTALLED=1" > install.lock
+
+
+USER root
 ADD entrypoint.sh /entrypoint.sh
 
 RUN chmod a+x /entrypoint.sh \
@@ -105,8 +113,8 @@ RUN chmod a+x /entrypoint.sh \
      && chmod a=rwx -R /run
 
 USER $USER
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "tail -F -s 2 /var/log/**/* /var/www/html/var/log/**/*.log"]
 
-WORKDIR $HOME/html
-RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache
-RUN rm -rf /var/cache/apk/* $HOME/.npm /tmp/*
-CMD /entrypoint.sh
+HEALTHCHECK --interval=1s --timeout=3s --retries=10 \
+  CMD [ "sh", "-c", "test ! -f /var/www/shopware.zip" ]

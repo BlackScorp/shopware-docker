@@ -116,10 +116,10 @@ RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-
     && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
     && zip -r -9 $HOME/shopware.zip .  \
     && rm -rf vendor/* \
-    && find . -type d -exec touch {}/.lock +  \
-    && find . -type f ! -name '.lock' -delete
+    && find . -type d -exec touch {}/.temp.docker +  \
+    && find . -type f ! -name '.temp.docker' -delete
 
 CMD ["/entrypoint.sh"]
 
 
-HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD [ "sh", "-c", "test ! -f /var/www/shopware.zip" ]
+HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD [ "sh", "-c", "test -f /var/www/html/shop.installed" ]

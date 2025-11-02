@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 
 # base docker commands
-DOCKER_RUN_COMMAND = docker compose up -d
+DOCKER_RUN_COMMAND = docker compose up -d --wait
 DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
 DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 
@@ -30,7 +30,8 @@ SHOPWARE_ENV_FILE := .env.local
 ifneq ($(IS_SW_64),)
 	SHOPWARE_ENV_FILE := .env
 endif
-
+# in case we need the variable for bind mount
+export SHOPWARE_ENV_FILE
 # hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
 ALPHA_HOOKS := $(wildcard hooks/[a-z]*.mk)
 NUM_HOOKS   := $(sort $(wildcard hooks/[0-9]*.mk))
@@ -126,7 +127,7 @@ start: ##4 start docker container
 	$(DOCKER_RUN_COMMAND)
 
 build: ##4 build container
-	$(DOCKER_RUN_COMMAND) --build --wait #we need to wait until zip file is done
+	$(DOCKER_RUN_COMMAND) --build
 
 stop: ##4 stop container
 	docker stop $$(docker ps -aq) || true
@@ -141,7 +142,6 @@ setup: ##4 initial setup
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_ENV=dev > $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(PROJECT_URL) >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> $(SHOPWARE_ENV_FILE)"
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> $(SHOPWARE_ENV_FILE)"
 ifneq ($(IS_SW_64),)
 	$(DOCKER_BACKEND_COMMAND) -c "echo MAILER_URL=smtp://mailer:1025 >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_ROOT_BACKEND_COMMAND) -c "wget https://getcomposer.org/download/2.2.9/composer.phar && chmod a+x composer.phar && mv composer.phar /usr/local/bin/composer"
@@ -156,7 +156,7 @@ endif
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console sales-channel:update:domain $(DOMAIN) -q'
 ifneq ($(IS_SW_64),)
 	$(DOCKER_BACKEND_COMMAND) -c 'mkdir -p /var/www/html/var/test/jwt && cp /var/www/html/config/jwt/*.pem /var/www/html/var/test/jwt && chmod 0660 /var/www/html/var/test/jwt/*.pem'
-	#$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
+	$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
 endif
 ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-storefront.sh"

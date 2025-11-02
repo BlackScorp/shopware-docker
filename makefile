@@ -1,23 +1,26 @@
 .PHONY: help hook-start hook-build
 .DEFAULT_GOAL := help
 
-# base docker commands
-DOCKER_RUN_COMMAND = docker compose up -d --wait
-DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
-DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 
+ROOT_DIR:=$(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+WORKING_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 # variables from env files
 # we want to overwrite variables based on file priority
 # .env > .env.local > var/6.4.env > var/6.4.20.2.env  more specific file wins
-ENV_FILE_BASE := .env
-ENV_FILE_LOCAL := .env.local
+ENV_FILE_BASE := $(ROOT_DIR)/.env
+ENV_FILE_LOCAL := $(WORKING_DIR)/.env.local
 -include $(ENV_FILE_BASE) $(ENV_FILE_LOCAL)
 SW_MAJOR_VERSION := $(strip $(shell echo $(SW_VERSION) | cut -d. -f1,2))
-ENV_FILE_VERSION_EXACT := vars/$(SW_VERSION).env
-ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
+ENV_FILE_VERSION_EXACT := $(ROOT_DIR)/vars/$(SW_VERSION).env
+ENV_FILE_VERSION_MAJOR := $(ROOT_DIR)/vars/$(SW_MAJOR_VERSION).env
 -include $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT)
 # this line exports the variables from env file so docker compose up use the correct variables
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
+
+# base docker commands
+DOCKER_RUN_COMMAND = docker compose -f $(ROOT_DIR)/compose.yaml -f $(WORKING_DIR)/compose.override.yaml up -d --wait
+DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
+DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 
 PROJECT_URL := $(HTTP_SCHEME)://$(DOMAIN)
 # helper to check different SW versions
@@ -33,8 +36,8 @@ endif
 # in case we need the variable for bind mount
 export SHOPWARE_ENV_FILE
 # hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
-ALPHA_HOOKS := $(wildcard hooks/[a-z]*.mk)
-NUM_HOOKS   := $(sort $(wildcard hooks/[0-9]*.mk))
+ALPHA_HOOKS := $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk hooks/[a-z]*.mk)
+NUM_HOOKS   := $(sort $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk hooks/[0-9]*.mk))
 HOOKS := $(ALPHA_HOOKS) $(NUM_HOOKS)
 
 -include $(HOOKS)
@@ -56,16 +59,19 @@ help:
 	@echo "PROJECT COMMANDS"
 	@echo "--------------------------------------------------------------------------------------------"
 	@printf "\033[33mInstallation:%-30s\033[0m %s\n"
-	@grep -E '^[a-zA-Z_-]+:.*?##1 .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?##1 "}; {printf "\033[33m  - %-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z_-]+:.*?##1 .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##1 "}; {printf "\033[33m  - %-30s\033[0m %s\n", $$1, $$2}'
 	@echo "--------------------------------------------------------------------------------------------"
 	@printf "\033[36mDevelopment:%-30s\033[0m %s\n"
-	@grep -E '^[a-zA-Z_-]+:.*?##2 .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?##2 "}; {printf "\033[36m  - %-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z_-]+:.*?##2 .*$$'  $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##2 "}; {printf "\033[36m  - %-30s\033[0m %s\n", $$1, $$2}'
 	@echo "--------------------------------------------------------------------------------------------"
 	@printf "\033[32mTests:%-30s\033[0m %s\n"
-	@grep -E '^[a-zA-Z_-]+:.*?##3 .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?##3 "}; {printf "\033[32m  - %-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z_-]+:.*?##3 .*$$'  $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##3 "}; {printf "\033[32m  - %-30s\033[0m %s\n", $$1, $$2}'
 	@echo "---------------------------------------------------------------------------------------------------------"
 	@printf "\033[35mDevOps:%-30s\033[0m %s\n"
-	@grep -E '^[a-zA-Z_-]+:.*?##4 .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?##4 "}; {printf "\033[35m  - %-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z_-]+:.*?##4 .*$$'  $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##4 "}; {printf "\033[35m  - %-30s\033[0m %s\n", $$1, $$2}'
+	@echo "---------------------------------------------------------------------------------------------------------"
+	@printf "\033[37mLocal:%-30s\033[0m %s\n"
+	@grep -h -E '^[a-zA-Z_-]+:.*?##5 .*$$'  $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##5 "}; {printf "\033[37m  - %-30s\033[0m %s\n", $$1, $$2}'
 
 init: ##1 build a docker container, use this when you change shopware version or need a clean setup
 	make kill
@@ -133,9 +139,8 @@ stop: ##4 stop container
 	docker stop $$(docker ps -aq) || true
 	docker rm $$(docker ps -aq) || true
 
-kill: ##4 clear images and volumes
+kill: ##4 clear volumes
 	make stop
-	docker image rm $$(docker image ls -q -f "label=com.docker.compose.project=$(PROJECT)") || true
 	docker volume rm $$(docker volume ls -q -f "label=com.docker.compose.project=$(PROJECT)") || true
 
 setup: ##4 initial setup

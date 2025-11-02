@@ -19,6 +19,7 @@ ENV_FILE_VERSION_MAJOR := vars/$(SW_MAJOR_VERSION).env
 # this line exports the variables from env file so docker compose up use the correct variables
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
 
+PROJECT_URL := $(HTTP_SCHEME)://$(DOMAIN)
 # helper to check different SW versions
 IS_SW_64 :=$(filter 6.4,$(SW_MAJOR_VERSION))
 IS_SW_65 :=$(filter 6.5,$(SW_MAJOR_VERSION))
@@ -88,9 +89,6 @@ ussh: ##2 quick access into container as root
 	$(DOCKER_ROOT_BACKEND_COMMAND)
 
 
-download-src: ##2 downloads the complete shop code for code completion
-	docker cp $(SHOP_CONTAINER):/var/www/html $(PROJECT_DIR)
-
 download-vendor: ##2 downloads the vendor code for code completion
 	docker cp $(SHOP_CONTAINER):/var/www/html/vendor $(PROJECT_DIR)
 
@@ -141,7 +139,7 @@ kill: ##4 clear images and volumes
 
 setup: ##4 initial setup
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_ENV=dev > $(SHOPWARE_ENV_FILE)"
-	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(HTTP_SCHEME)://$(DOMAIN) >> $(SHOPWARE_ENV_FILE)"
+	$(DOCKER_BACKEND_COMMAND) -c "echo APP_URL=$(PROJECT_URL) >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo DATABASE_URL=mysql://dev:dev@database/shopware >> $(SHOPWARE_ENV_FILE)"
 	$(DOCKER_BACKEND_COMMAND) -c "echo APP_SECRET=my-secret >> $(SHOPWARE_ENV_FILE)"
 ifneq ($(IS_SW_64),)
@@ -155,7 +153,9 @@ endif
 	$(DOCKER_BACKEND_COMMAND) -c "bin/console system:install --drop-database --create-database --basic-setup -n --no-debug -f"
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" >> $(SHOPWARE_ENV_FILE)'
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:config:set core.frw.completedAt "2025-01-01 01:01:01" -q'
+	$(DOCKER_BACKEND_COMMAND) -c 'bin/console sales-channel:update:domain $(DOMAIN) -q'
 ifneq ($(IS_SW_64),)
+	$(DOCKER_BACKEND_COMMAND) -c 'mkdir -p /var/www/html/var/test/jwt && cp /var/www/html/config/jwt/*.pem /var/www/html/var/test/jwt && chmod 0660 /var/www/html/var/test/jwt/*.pem'
 	#$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
 endif
 ifneq ($(IS_SW_65),)
@@ -163,5 +163,5 @@ ifneq ($(IS_SW_65),)
 endif
 
 open:
-	open $(HTTP_SCHEME)://$(DOMAIN)
-	open $(HTTP_SCHEME)://$(DOMAIN)/admin
+	open $(PROJECT_URL)
+	open $(PROJECT_URL)/admin

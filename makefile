@@ -156,7 +156,7 @@ endif
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:generate-app-secret | sed "s/^/APP_SECRET=/" >> $(SHOPWARE_ENV_FILE)'
 	$(DOCKER_BACKEND_COMMAND) -c 'bin/console system:config:set core.frw.completedAt "2025-01-01 01:01:01" -q'
 ifneq ($(IS_SW_64),)
-	$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
+	#$(DOCKER_BACKEND_COMMAND) -c "bin/build-js.sh"
 endif
 ifneq ($(IS_SW_65),)
 	$(DOCKER_BACKEND_COMMAND) -c "bin/build-storefront.sh"

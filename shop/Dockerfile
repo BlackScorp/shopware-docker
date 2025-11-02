@@ -96,15 +96,6 @@ RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && ln -sf /usr/bin/php${PHP_VERSION} /usr/bin/php \
      && chown -R $USER:$GROUPNAME $HOME
 
-
-USER $USER
-
-WORKDIR $HOME/html
-RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache  \
-    && zip -r $HOME/shopware.zip . && find . -mindepth 1 -delete && ls -la && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer && echo "INSTALLED=1" > install.lock
-
-
-USER root
 ADD entrypoint.sh /entrypoint.sh
 
 RUN chmod a+x /entrypoint.sh \
@@ -113,8 +104,22 @@ RUN chmod a+x /entrypoint.sh \
      && chmod a=rwx -R /run
 
 USER $USER
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["sh", "-c", "tail -F -s 2 /var/log/**/* /var/www/html/var/log/**/*.log"]
 
-HEALTHCHECK --interval=1s --timeout=3s --retries=10 \
-  CMD [ "sh", "-c", "test ! -f /var/www/shopware.zip" ]
+WORKDIR $HOME/html
+
+# we create shopware project
+# then zip the folder
+# afterwards remove vendor
+# add a .lock file into every folder. this way the folder permissions stay and we dont have issues during bindmount
+# at the end delete all files execept .lock files
+RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache  \
+    && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
+    && zip -r -9 $HOME/shopware.zip .  \
+    && rm -rf vendor/* \
+    && find . -type d -exec touch {}/.lock +  \
+    && find . -type f ! -name '.lock' -delete
+
+CMD ["/entrypoint.sh"]
+
+
+HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD [ "sh", "-c", "test ! -f /var/www/shopware.zip" ]

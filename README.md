@@ -25,15 +25,15 @@ make build
 ``
 this command will build a docker container with shopware installed.
 create a composer.override.yaml file with your own volumes in shop.
-``
+```
 #example composer.override.yaml
 volumes:
   - ./myplugin:/var/www/html/custom/plugins/MyPlugin
-``
+```
 and run the command
-``
+```
 make run
-``
+```
 this command will restart the container so that the new mounted folder is available.
 
 adjust the make run command to your needs. e.g. run migrations, install plugins, etc.
@@ -53,7 +53,7 @@ there currently following hooks
 - HOOK_START: is triggered after make HOOK_BUILD and when make run command is executed
 
 this is an example hook script
-``
+```
 #file hooks/my-hook.local.mk
 
 HOOK_START += say-hello-on-start
@@ -62,7 +62,7 @@ HOOK_START += say-hello-on-start
 
 say-hello-on-start:
     @echo "Hello"
-``
+```
 ## URLs
 Shopware Admin: http://localhost/admin
 Admin Watcher: http://localhost:8080

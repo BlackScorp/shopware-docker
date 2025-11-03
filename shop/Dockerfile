@@ -68,6 +68,8 @@ RUN apk add --no-cache --virtual .build-deps \
         nginx \
         make \
         zip \
+        openssh \
+        su-exec \
     && apk del .build-deps
 
 COPY --from=node-binaries /usr/local/bin /usr/local/bin
@@ -85,7 +87,11 @@ RUN addgroup \
      $USER \
      && addgroup $USER www-data \
      && addgroup $USER nginx \
-     && addgroup $USER root
+     && addgroup $USER root \
+     && addgroup $USER nobody \
+     && addgroup $USER shadow \
+     && echo "docker:docker" | chpasswd
+
 
 RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && chmod a+x composer.phar \
@@ -118,6 +124,17 @@ RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-
     && rm -rf vendor/* \
     && find . -type d -exec touch {}/.temp.docker +  \
     && find . -type f ! -name '.temp.docker' -delete
+
+RUN mkdir -p $HOME/.ssh/etc/ssh \
+    && ssh-keygen -A -f $HOME/.ssh/ \
+    && echo "PasswordAuthentication yes" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "PermitRootLogin yes" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "PermitEmptyPasswords no" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_dsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ecdsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ed25519_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_rsa_key" >> $HOME/.ssh/etc/ssh/sshd_config
+
 
 CMD ["/entrypoint.sh"]
 

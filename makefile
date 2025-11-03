@@ -36,8 +36,8 @@ endif
 # in case we need the variable for bind mount
 export SHOPWARE_ENV_FILE
 # hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
-ALPHA_HOOKS := $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk hooks/[a-z]*.mk)
-NUM_HOOKS   := $(sort $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk hooks/[0-9]*.mk))
+ALPHA_HOOKS := $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk $(WORKING_DIR)/hooks/[a-z]*.mk)
+NUM_HOOKS   := $(sort $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk $(WORKING_DIR)/hooks/[0-9]*.mk))
 HOOKS := $(ALPHA_HOOKS) $(NUM_HOOKS)
 
 -include $(HOOKS)
@@ -46,7 +46,6 @@ hook-start: $(HOOK_START)
 hook-build: $(HOOK_BUILD)
 
 help:
-	@echo "Included files: $(MAKEFILE_LIST)"
 	@echo "Shopware Setup"
 	@echo "PROJECT=$(PROJECT)"
 	@echo "SW_VERSION=$(SW_VERSION)"
@@ -56,6 +55,7 @@ help:
 	@echo "NODE_VERSION=$(NODE_VERSION)"
 	@echo "MARIADB_VERSION=$(MARIADB_VERSION)"
 	@echo "ALPINE_VERSION=$(ALPINE_VERSION)"
+	@echo "Included files: $(MAKEFILE_LIST)"
 	@echo "PROJECT COMMANDS"
 	@echo "--------------------------------------------------------------------------------------------"
 	@printf "\033[33mInstallation:%-30s\033[0m %s\n"

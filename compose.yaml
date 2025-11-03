@@ -28,6 +28,7 @@ services:
     labels:
       - "project=${PROJECT}"
     ports:
+      - "22:22" #ssh port
       - 9999:9999 #storefront assets port
       - 9998:9998 #storefront watcher
       - 8080:8080 #admin port

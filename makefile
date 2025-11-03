@@ -134,6 +134,7 @@ start: ##4 start docker container
 
 build: ##4 build container
 	$(DOCKER_RUN_COMMAND) --build
+	docker image rm $$(docker image ls -q -f "dangling=true") || true
 
 stop: ##4 stop container
 	docker stop $$(docker ps -aq) || true

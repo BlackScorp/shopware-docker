@@ -69,7 +69,6 @@ RUN apk add --no-cache --virtual .build-deps \
         make \
         zip \
         openssh \
-        su-exec \
     && apk del .build-deps
 
 COPY --from=node-binaries /usr/local/bin /usr/local/bin
@@ -112,6 +111,17 @@ RUN chmod a+x /entrypoint.sh \
 
 USER $USER
 
+RUN mkdir -p $HOME/.ssh/etc/ssh \
+    && ssh-keygen -A -f $HOME/.ssh/ \
+    && echo "PasswordAuthentication yes" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "PermitRootLogin yes" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "PermitEmptyPasswords no" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_dsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ecdsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ed25519_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_rsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "Subsystem sftp /usr/lib/ssh/sftp-server" >> $HOME/.ssh/etc/ssh/sshd_config
+
 WORKDIR $HOME/html
 
 # we create shopware project
@@ -125,18 +135,6 @@ RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-
     && rm -rf vendor/* \
     && find . -type d -exec touch {}/.temp.docker +  \
     && find . -type f ! -name '.temp.docker' -delete
-
-RUN mkdir -p $HOME/.ssh/etc/ssh \
-    && ssh-keygen -A -f $HOME/.ssh/ \
-    && echo "PasswordAuthentication yes" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "PermitRootLogin yes" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "PermitEmptyPasswords no" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_dsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ecdsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ed25519_key" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_rsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "Subsystem sftp /usr/lib/ssh/sftp-server" >> $HOME/.ssh/etc/ssh/sshd_config
-
 
 CMD ["/entrypoint.sh"]
 

@@ -18,7 +18,13 @@ ENV_FILE_VERSION_MAJOR := $(ROOT_DIR)/vars/$(SW_MAJOR_VERSION).env
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
 
 # base docker commands
-DOCKER_RUN_COMMAND = docker compose -f $(ROOT_DIR)/compose.yaml -f $(WORKING_DIR)/compose.override.yaml up -d --wait
+DOCKER_COMPOSE_FILES := -f $(ROOT_DIR)/compose.yaml
+DOCKER_COMPOSE_OVERRIDE := $(wildcard $(WORKING_DIR)/compose.override.yaml)
+ifneq ($(DOCKER_COMPOSE_OVERRIDE),)
+DOCKER_COMPOSE_FILES += -f $(DOCKER_COMPOSE_OVERRIDE)
+endif
+
+DOCKER_RUN_COMMAND = docker compose $(DOCKER_COMPOSE_FILES) up -d --wait
 DOCKER_BACKEND_COMMAND = docker exec -it $(SHOP_CONTAINER) sh
 DOCKER_ROOT_BACKEND_COMMAND = docker exec -u root -it $(SHOP_CONTAINER) sh
 
@@ -36,7 +42,7 @@ endif
 # in case we need the variable for bind mount
 export SHOPWARE_ENV_FILE
 # hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
-ALPHA_HOOKS := $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk $(WORKING_DIR)/hooks/[a-z]*.mk)
+ALPHA_HOOKS := $(sort $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk $(WORKING_DIR)/hooks/[a-z]*.mk))
 NUM_HOOKS   := $(sort $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk $(WORKING_DIR)/hooks/[0-9]*.mk))
 HOOKS := $(ALPHA_HOOKS) $(NUM_HOOKS)
 

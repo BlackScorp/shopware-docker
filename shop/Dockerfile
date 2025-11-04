@@ -82,6 +82,7 @@ RUN addgroup \
      --disabled-password \
      --gecos "" \
      --ingroup "$GROUPNAME" \
+     --h $HOME\
      --no-create-home \
      --uid "$UID" \
      $USER \
@@ -133,7 +134,8 @@ RUN mkdir -p $HOME/.ssh/etc/ssh \
     && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_dsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
     && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ecdsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
     && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_ed25519_key" >> $HOME/.ssh/etc/ssh/sshd_config \
-    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_rsa_key" >> $HOME/.ssh/etc/ssh/sshd_config
+    && echo "HostKey /var/www/.ssh/etc/ssh/ssh_host_rsa_key" >> $HOME/.ssh/etc/ssh/sshd_config \
+    && echo "Subsystem sftp /usr/lib/ssh/sftp-server" >> $HOME/.ssh/etc/ssh/sshd_config
 
 
 CMD ["/entrypoint.sh"]

@@ -43,7 +43,15 @@ endif
 export SHOPWARE_ENV_FILE
 # hooks without numbers are executed first. then numbered hooks are executed. higher number means executed as last
 ALPHA_HOOKS := $(sort $(wildcard $(ROOT_DIR)/hooks/[a-z]*.mk $(WORKING_DIR)/hooks/[a-z]*.mk))
-NUM_HOOKS   := $(sort $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk $(WORKING_DIR)/hooks/[0-9]*.mk))
+
+HOOK_FILES := $(wildcard $(ROOT_DIR)/hooks/[0-9]*.mk) \
+              $(wildcard $(WORKING_DIR)/hooks/[0-9]*.mk)
+
+HOOK_BASENAMES := $(sort $(notdir $(HOOK_FILES)))
+
+NUM_HOOKS := $(foreach n,$(HOOK_BASENAMES), \
+               $(filter %/$(n),$(HOOK_FILES)))
+
 HOOKS := $(ALPHA_HOOKS) $(NUM_HOOKS)
 
 -include $(HOOKS)
@@ -53,6 +61,7 @@ hook-build: $(HOOK_BUILD)
 
 help:
 	@echo "Shopware Setup"
+	@echo "HOOK=$(NUM_HOOKS)"
 	@echo "PROJECT=$(PROJECT)"
 	@echo "SW_VERSION=$(SW_VERSION)"
 	@echo "SW_MAJOR_VERSION=$(SW_MAJOR_VERSION)"
@@ -103,6 +112,7 @@ ussh: ##2 quick access into container as root
 
 
 download-vendor: ##2 downloads the vendor code for code completion
+	rm -rf $(PROJECT_DIR)/vendor
 	docker cp $(SHOP_CONTAINER):/var/www/html/vendor $(PROJECT_DIR)
 
 watch-admin: ##2 start admin watcher

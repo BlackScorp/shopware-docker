@@ -16,7 +16,7 @@ ENV HOME=/var/www
 ENV NPM_CONFIG_PREFIX=$HOME/.npm
 ENV PATH=$NPM_CONFIG_PREFIX/bin:$PATH:
 
-# Build-Dependencies nur für das Kompilieren
+
 RUN apk add --no-cache --virtual .build-deps \
         gcc \
         autoconf \

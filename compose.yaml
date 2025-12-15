@@ -24,7 +24,6 @@ services:
   shop:
     container_name: ${SHOP_CONTAINER}
     stop_grace_period: 1s
-    pull_policy: always
     labels:
       - "project=${PROJECT}"
     ports:

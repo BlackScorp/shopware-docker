@@ -1,3 +1,4 @@
 /.env.local
 /compose.override.yaml
 hooks/*.local.mk
+.idea

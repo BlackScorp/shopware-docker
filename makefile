@@ -63,6 +63,7 @@ help:
 	@echo "Shopware Setup"
 	@echo "HOOK=$(NUM_HOOKS)"
 	@echo "PROJECT=$(PROJECT)"
+	@echo "PROJECT_DIR=$(PROJECT_DIR)"
 	@echo "SW_VERSION=$(SW_VERSION)"
 	@echo "SW_MAJOR_VERSION=$(SW_MAJOR_VERSION)"
 	@echo "ENV_FILE=$(SHOPWARE_ENV_FILE)"

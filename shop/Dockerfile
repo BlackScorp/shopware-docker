@@ -100,6 +100,7 @@ RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && ln -sf /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
      && ln -sf /etc/php${PHP_VERSION}/conf.d /usr/local/etc/php \
      && ln -sf /usr/bin/php${PHP_VERSION} /usr/bin/php \
+     && mkdir $HOME/html \
      && chown -R $USER:$GROUPNAME $HOME
 
 ADD entrypoint.sh /entrypoint.sh
@@ -129,7 +130,7 @@ WORKDIR $HOME/html
 # afterwards remove vendor
 # add a .lock file into every folder. this way the folder permissions stay and we dont have issues during bindmount
 # at the end delete all files execept .lock files
-RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache  \
+RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache --prefer-source \
     && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
     && zip -r -9 $HOME/shopware.zip .  \
     && rm -rf vendor/* \

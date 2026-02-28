@@ -24,7 +24,7 @@ ls -la $TARGET_DIR
 
 if [ ! -f "$INSTALLED_FILE" ] && [ -f "$ZIP_FILE" ]; then
     echo "Unpacking Shopware..."
-    unzip -q "$ZIP_FILE" -d "$TARGET_DIR"
+    unzip -n -q "$ZIP_FILE" -d "$TARGET_DIR"
     find $TARGET_DIR -type f -name '.temp.docker' -delete
     rm "$ZIP_FILE"
     touch "$INSTALLED_FILE"

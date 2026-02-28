@@ -186,5 +186,5 @@ ifneq ($(IS_SW_65),)
 endif
 
 open:
-	open $(PROJECT_URL)
-	open $(PROJECT_URL)/admin
+	open "$(PROJECT_URL)"
+	open "$(PROJECT_URL)/admin"

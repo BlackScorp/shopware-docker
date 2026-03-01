@@ -17,6 +17,8 @@ ENV_FILE_VERSION_MAJOR := $(ROOT_DIR)/vars/$(SW_MAJOR_VERSION).env
 # this line exports the variables from env file so docker compose up use the correct variables
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
 
+PROJECT_DIR:=$(realpath $(PROJECT_DIR))
+
 # base docker commands
 DOCKER_COMPOSE_FILES := -f $(ROOT_DIR)/compose.yaml
 DOCKER_COMPOSE_OVERRIDE := $(wildcard $(WORKING_DIR)/compose.override.yaml)

@@ -135,7 +135,7 @@ WORKDIR $HOME/html
 # at the end delete all files execept .lock files
 RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache --prefer-source \
     && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
-    && zip -r -9 $HOME/shopware.zip . -x *.git* *node_modules* *var/cache* *docs* *test* *.md \
+    && zip -r -9 $HOME/shopware.zip . -x *.git* *node_modules* *var/cache* *docs* *.pdf *.md \
     && rm -rf vendor/* \
     && find . -type d -exec touch {}/.temp.docker +  \
     && find . -type f ! -name '.temp.docker' -delete

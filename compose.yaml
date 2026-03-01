@@ -47,7 +47,7 @@ services:
     networks:
       - network
     volumes:
-      - shop:/var/www/html:consistent
+      - shop:/var/www/html:cached
       - ./config/default.conf:/etc/nginx/http.d/default.conf
       - ./config/php-ini-overrides.ini:/usr/local/etc/php/conf.d/extra.ini
   database:

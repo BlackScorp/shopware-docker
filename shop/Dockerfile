@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 ARG ALPINE_VERSION=${ALPINE_VERSION:-latest}
 ARG NODE_VERSION=${NODE_VERSION:-23}
 FROM node:${NODE_VERSION}-alpine AS node-binaries
@@ -31,6 +33,7 @@ RUN apk add --no-cache --virtual .build-deps \
         php${PHP_VERSION}-fpm \
         php${PHP_VERSION}-curl \
         php${PHP_VERSION}-bcmath \
+        php${PHP_VERSION}-opcache \
         php${PHP_VERSION}-gd \
         php${PHP_VERSION}-mysqli \
         php${PHP_VERSION}-openssl \
@@ -132,7 +135,7 @@ WORKDIR $HOME/html
 # at the end delete all files execept .lock files
 RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache --prefer-source \
     && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
-    && zip -r -9 $HOME/shopware.zip . -x *.git* *node_modules* \
+    && zip -r -9 $HOME/shopware.zip . -x *.git* *node_modules* *var/cache* *docs* *test* *.md \
     && rm -rf vendor/* \
     && find . -type d -exec touch {}/.temp.docker +  \
     && find . -type f ! -name '.temp.docker' -delete

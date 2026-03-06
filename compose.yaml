@@ -21,6 +21,7 @@ services:
       - ./config/default.conf.template:/etc/nginx/templates/default.conf.template:ro
     pull_policy: always
     stop_grace_period: 1s
+
   shop:
     container_name: ${SHOP_CONTAINER}
     stop_grace_period: 1s
@@ -50,6 +51,7 @@ services:
       - shop:/var/www/html:cached
       - ./config/default.conf:/etc/nginx/http.d/default.conf
       - ./config/php-ini-overrides.ini:/usr/local/etc/php/conf.d/extra.ini
+
   database:
     image: mariadb:${MARIADB_VERSION:-latest}
     container_name: database
@@ -67,6 +69,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-shopware}
     volumes:
       - database:/var/lib/mysql
+
   mailer:
     image: schickling/mailcatcher
     container_name: mailer
@@ -76,6 +79,38 @@ services:
       - network
     labels:
       - "project=${PROJECT}"
+
+  localai:
+    image: localai/localai:${LOCALAI_VERSION:-latest}
+    container_name: localai
+    stop_grace_period: 1s
+    labels:
+      - "project=${PROJECT}"
+    environment:
+      - LOCALAI_MODELS_CONFIG_FILE=/models/models.yaml
+    ports:
+     - "11434:8080"
+    volumes:
+     - models:/models
+     - backends:/backends
+     - ./config/models.yaml:/models/models.yaml
+    networks:
+      - network
+    restart: unless-stopped
+
+  mcp-filesystem:
+    image: ghcr.io/mark3labs/mcp-filesystem-server:latest
+    container_name: mcp-filesystem
+    stop_grace_period: 1s
+    labels:
+      - "project=${PROJECT}"
+    networks:
+      - network
+    volumes:
+      - shop:/code
+    stdin_open: true
+    tty: true
+    command: /code
 
 networks:
   network:
@@ -89,3 +124,9 @@ volumes:
   shop:
     labels:
       - "project=${PROJECT}"
+  backends:
+     labels:
+     - "project=${PROJECT}"
+  models:
+    labels:
+     - "project=${PROJECT}"

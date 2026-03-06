@@ -1,0 +1,45 @@
+- name: qwen-coder
+  backend: llama-cpp
+  description: Imported from ollama://qwen2.5-coder:1.5b
+  parameters:
+    model: qwen2.5-coder__1.5b
+    context_size: 4096
+    stream: true
+
+  tool_choice: auto
+  gpu_layers: 2
+
+  agent:
+    max_attempts: 3              # Maximum number of tool execution attempts
+    max_iterations: 3            # Maximum number of reasoning iterations
+    enable_reasoning: true       # Enable tool reasoning capabilities
+    enable_planning: false       # Enable auto-planning capabilities
+    enable_mcp_prompts: true    # Enable MCP prompts
+    enable_plan_re_evaluator: false # Enable plan re-evaluation
+    disable_sink_state: false    # Disable sink state behavior
+    loop_detection: 3            # Loop detection sensitivity level
+    max_adjustment_attempts: 5   # Maximum adjustment attempts for tool calls
+    force_reasoning_tool: false  # Force reasoning tool usage
+
+- name: qwen-coder-vulkan
+  backend: vulkan-llama-cpp
+  description: Imported from ollama://qwen2.5-coder:1.5b
+  parameters:
+    model: qwen2.5-coder__1.5b
+    context_size: 4096
+    stream: true
+
+  tool_choice: auto
+  gpu_layers: 2
+
+  agent:
+    max_attempts: 3              # Maximum number of tool execution attempts
+    max_iterations: 3            # Maximum number of reasoning iterations
+    enable_reasoning: true       # Enable tool reasoning capabilities
+    enable_planning: false       # Enable auto-planning capabilities
+    enable_mcp_prompts: true    # Enable MCP prompts
+    enable_plan_re_evaluator: false # Enable plan re-evaluation
+    disable_sink_state: false    # Disable sink state behavior
+    loop_detection: 3            # Loop detection sensitivity level
+    max_adjustment_attempts: 5   # Maximum adjustment attempts for tool calls
+    force_reasoning_tool: false  # Force reasoning tool usage

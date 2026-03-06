@@ -94,9 +94,13 @@ services:
      - models:/models
      - backends:/backends
      - ./config/models.yaml:/models/models.yaml
+     - shop:/code
+     - mcp:/root/mcp
     networks:
       - network
     restart: unless-stopped
+    depends_on: 
+      - mcp-filesystem
 
   mcp-filesystem:
     image: ghcr.io/mark3labs/mcp-filesystem-server:latest
@@ -108,6 +112,7 @@ services:
       - network
     volumes:
       - shop:/code
+      - mcp:/app
     stdin_open: true
     tty: true
     command: /code
@@ -128,5 +133,8 @@ volumes:
      labels:
      - "project=${PROJECT}"
   models:
+    labels:
+     - "project=${PROJECT}"
+  mcp:
     labels:
      - "project=${PROJECT}"

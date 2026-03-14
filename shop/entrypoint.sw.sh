@@ -1,20 +1,8 @@
 #!/bin/bash
 set -e
 
-echo "Check user on container"
-whoami
 
-echo "Starting php-fpm..."
-php-fpm &
-
-echo "Starting nginx..."
-nginx -g 'daemon off;' &
-
-echo "Starting crond..."
-crond &
-
-echo "Starting ssh daemon"
-/usr/sbin/sshd -D -f /var/www/.ssh/etc/ssh/sshd_config -e &
+/entrypoint.base.sh &
 
 TARGET_DIR="/var/www/html"
 ZIP_FILE="/var/www/shopware.zip"
@@ -30,9 +18,9 @@ if [ ! -f "$INSTALLED_FILE" ] && [ -f "$ZIP_FILE" ]; then
     touch "$INSTALLED_FILE"
     echo "Unpack done."
 fi
+
 mkdir -p $TARGET_DIR/var/log
 touch $TARGET_DIR/var/log/dev.log
-
 
 tail -F -s 2 /var/log/**/* $TARGET_DIR/var/log/*.log
 

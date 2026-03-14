@@ -1,23 +1,15 @@
-# syntax=docker/dockerfile:1.4
 
 ARG ALPINE_VERSION=${ALPINE_VERSION:-latest}
-ARG NODE_VERSION=${NODE_VERSION:-23}
-FROM node:${NODE_VERSION}-alpine AS node-binaries
-RUN npm cache clean --force
 
-FROM alpine:$ALPINE_VERSION
-ARG ENV=${ENV:-production}
-ARG PHP_VERSION=${PHP_VERSION:-84}
-ARG SW_VERSION=${SW_VERSION:-6.7.2.0}
+FROM alpine:${ALPINE_VERSION}
+
+ARG PHP_VERSION=${PHP_VERSION:-85}
 
 ENV USER=docker
 ENV GROUPNAME=$USER
 ENV UID=1000
 ENV GID=1000
 ENV HOME=/var/www
-ENV NPM_CONFIG_PREFIX=$HOME/.npm
-ENV PATH=$NPM_CONFIG_PREFIX/bin:$PATH:
-
 
 RUN apk add --no-cache --virtual .build-deps \
         gcc \
@@ -29,7 +21,7 @@ RUN apk add --no-cache --virtual .build-deps \
         libzip-dev \
         openssl-dev \
     && apk add --no-cache \
-          php${PHP_VERSION}-dev \
+        php${PHP_VERSION}-dev \
         php${PHP_VERSION}-fpm \
         php${PHP_VERSION}-curl \
         php${PHP_VERSION}-bcmath \
@@ -74,9 +66,7 @@ RUN apk add --no-cache --virtual .build-deps \
         openssh \
     && apk del .build-deps
 
-COPY --from=node-binaries /usr/local/bin /usr/local/bin
-COPY --from=node-binaries /usr/local/lib/node_modules /usr/local/lib/node_modules
-
+# user
 RUN addgroup \
      --gid "$GID" \
      "$GROUPNAME" \
@@ -84,7 +74,7 @@ RUN addgroup \
      --disabled-password \
      --gecos "" \
      --ingroup "$GROUPNAME" \
-     --h $HOME\
+     --h $HOME \
      --no-create-home \
      --uid "$UID" \
      $USER \
@@ -103,17 +93,18 @@ RUN wget https://getcomposer.org/download/latest-stable/composer.phar \
      && ln -sf /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm \
      && ln -sf /etc/php${PHP_VERSION}/conf.d /usr/local/etc/php \
      && ln -sf /usr/bin/php${PHP_VERSION} /usr/bin/php \
-     && mkdir $HOME/html \
+     && mkdir -p $HOME/html \
      && chown -R $USER:$GROUPNAME $HOME
 
-ADD entrypoint.sh /entrypoint.sh
+ADD entrypoint.sh /entrypoint.base.sh
 
-RUN chmod a+x /entrypoint.sh \
+RUN chmod a+x /entrypoint.base.sh \
      && chmod a=rwx -R /var/log \
      && chmod a=rwx -R /var/lib \
      && chmod a=rwx -R /run
 
 USER $USER
+
 
 RUN mkdir -p $HOME/.ssh/etc/ssh \
     && ssh-keygen -A -f $HOME/.ssh/ \
@@ -128,19 +119,4 @@ RUN mkdir -p $HOME/.ssh/etc/ssh \
 
 WORKDIR $HOME/html
 
-# we create shopware project
-# then zip the folder
-# afterwards remove vendor
-# add a .lock file into every folder. this way the folder permissions stay and we dont have issues during bindmount
-# at the end delete all files execept .lock files
-RUN composer create-project shopware/production:$SW_VERSION . --no-scripts --no-dev --no-cache --prefer-source \
-    && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
-    && zip -r -9 $HOME/shopware.zip . -x *.git* *node_modules* *var/cache* *docs* *.pdf *.md \
-    && rm -rf vendor/* \
-    && find . -type d -exec touch {}/.temp.docker +  \
-    && find . -type f ! -name '.temp.docker' -delete
-
-CMD ["/entrypoint.sh"]
-
-
-HEALTHCHECK --interval=5s --timeout=3s --retries=10 CMD [ "sh", "-c", "test -f /var/www/html/shop.installed" ]
+CMD ["/entrypoint.base.sh"]

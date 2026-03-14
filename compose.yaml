@@ -35,13 +35,14 @@ services:
       - 5333-5350:5333-5350 #plugin ports
     build:
       context: ./shop
+      dockerfile: shopware.Dockerfile
       args:
         PHP_VERSION: ${PHP_VERSION:-8.4}
         ENV: ${ENV:-dev}
-        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
-        SW_VERSION: ${SW_VERSION:-6.7.3.1}
+        SW_VERSION: ${SW_VERSION:-6.7.8.1}
         NODE_VERSION: ${NODE_VERSION:-23}
-    image: shopware:SW-${SW_VERSION}-PHP-${PHP_VERSION}-NODE-${NODE_VERSION}-ALPINE-${ALPINE_VERSION}
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+    image: shopware:SW-${SW_VERSION}-NODE-${NODE_VERSION}
     working_dir: /var/www/html
     depends_on:
       - database
@@ -79,43 +80,25 @@ services:
       - network
     labels:
       - "project=${PROJECT}"
-
-  localai:
-    image: localai/localai:${LOCALAI_VERSION:-latest}
-    container_name: localai
+  llm:
+    image: ollama/ollama
+    container_name: llm
     stop_grace_period: 1s
     labels:
       - "project=${PROJECT}"
-    environment:
-      - LOCALAI_MODELS_CONFIG_FILE=/models/models.yaml
     ports:
-     - "11434:8080"
-    volumes:
-     - models:/models
-     - backends:/backends
-     - ./config/models.yaml:/models/models.yaml
-     - shop:/code
-     - mcp:/root/mcp
-    networks:
-      - network
-    restart: unless-stopped
-    depends_on: 
-      - mcp-filesystem
-
-  mcp-filesystem:
-    image: ghcr.io/mark3labs/mcp-filesystem-server:latest
-    container_name: mcp-filesystem
-    stop_grace_period: 1s
-    labels:
-      - "project=${PROJECT}"
+      - "11434:11434"
     networks:
       - network
     volumes:
+      - models:/root/.ollama
       - shop:/code
-      - mcp:/app
-    stdin_open: true
-    tty: true
-    command: /code
+    #devices:
+    #  - /dev/dri
+    #environment:
+    #  - OLLAMA_VULKAN=1
+    restart: unless-stopped
+
 
 networks:
   network:
@@ -129,12 +112,6 @@ volumes:
   shop:
     labels:
       - "project=${PROJECT}"
-  backends:
-     labels:
-     - "project=${PROJECT}"
   models:
-    labels:
-     - "project=${PROJECT}"
-  mcp:
     labels:
      - "project=${PROJECT}"

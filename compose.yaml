@@ -80,24 +80,6 @@ services:
       - network
     labels:
       - "project=${PROJECT}"
-  llm:
-    image: ollama/ollama
-    container_name: llm
-    stop_grace_period: 1s
-    labels:
-      - "project=${PROJECT}"
-    ports:
-      - "11434:11434"
-    networks:
-      - network
-    volumes:
-      - models:/root/.ollama
-      - shop:/code
-    #devices:
-    #  - /dev/dri
-    #environment:
-    #  - OLLAMA_VULKAN=1
-    restart: unless-stopped
 
 
 networks:
@@ -112,6 +94,3 @@ volumes:
   shop:
     labels:
       - "project=${PROJECT}"
-  models:
-    labels:
-     - "project=${PROJECT}"

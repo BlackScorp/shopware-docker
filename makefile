@@ -19,8 +19,19 @@ export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/
 
 PROJECT_DIR:=$(realpath $(PROJECT_DIR))
 
-# base docker commands
+USE_LLM ?= 0
+
+# Base compose file
 DOCKER_COMPOSE_FILES := -f $(ROOT_DIR)/compose.yaml
+
+LLM_FILE := $(wildcard $(ROOT_DIR)/llm.yaml)
+
+ifneq ($(USE_LLM),0)
+	ifneq ($(LLM_FILE),)
+		DOCKER_COMPOSE_FILES += -f $(LLM_FILE)
+	endif
+endif
+
 DOCKER_COMPOSE_OVERRIDE := $(wildcard $(WORKING_DIR)/compose.override.yaml)
 ifneq ($(DOCKER_COMPOSE_OVERRIDE),)
 DOCKER_COMPOSE_FILES += -f $(DOCKER_COMPOSE_OVERRIDE)

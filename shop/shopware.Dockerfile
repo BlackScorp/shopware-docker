@@ -1,19 +1,20 @@
 # syntax=docker/dockerfile:1.4
 
 ARG NODE_VERSION=${NODE_VERSION:-23}
-ARG SW_VERSION=${SW_VERSION:-6.7.2.0}
+
 ARG ALPINE_VERSION=${ALPINE_VERSION:-latest}
 ARG PHP_VERSION=${PHP_VERSION:-85}
+ARG SW_VERSION=${SW_VERSION:-6.7.2.0}
 
 FROM node:${NODE_VERSION}-alpine AS node-binaries
 
-
+# we need to define arg again after from
 ARG PHP_VERSION
 ARG ALPINE_VERSION
-ARG SW_VERSION
 
 FROM base:PHP-${PHP_VERSION}-ALPINE-${ALPINE_VERSION}
 
+ARG SW_VERSION
 ENV HOME=/var/www
 
 ADD entrypoint.sw.sh /entrypoint.sw.sh

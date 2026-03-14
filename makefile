@@ -152,7 +152,7 @@ start: ##4 start docker container
 	$(DOCKER_RUN_COMMAND)
 
 build: ##4 build container
-	docker build -t base:PHP-$(PHP_VERSION)-ALPINE-$(ALPINE_VERSION) -f ./docker/base.Dockerfile --build-arg PHP_VERSION=$(PHP_VERSION) --build-arg ALPINE_VERSION=$(ALPINE_VERSION) ./docker
+	docker build -t base:PHP-$(PHP_VERSION)-ALPINE-$(ALPINE_VERSION) -f $(ROOT_DIR)/docker/base.Dockerfile --build-arg PHP_VERSION=$(PHP_VERSION) --build-arg ALPINE_VERSION=$(ALPINE_VERSION) $(ROOT_DIR)/docker
 	DOCKER_BUILDKIT=1 $(DOCKER_RUN_COMMAND) --build
 	docker image rm $$(docker image ls -q -f "dangling=true") || true
 

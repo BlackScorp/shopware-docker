@@ -6,7 +6,6 @@ ARG ALPINE_VERSION=${ALPINE_VERSION:-latest}
 ARG PHP_VERSION=${PHP_VERSION:-85}
 
 FROM node:${NODE_VERSION}-alpine AS node-binaries
-RUN npm cache clean --force
 
 
 ARG PHP_VERSION
@@ -20,7 +19,7 @@ ENV HOME=/var/www
 ADD entrypoint.sw.sh /entrypoint.sw.sh
 
 COPY --from=node-binaries /usr/local/bin /usr/local/bin
-COPY --from=node-binaries /usr/local/lib/node_modules /usr/local/lib/noade_modules
+COPY --from=node-binaries /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 WORKDIR $HOME/html
 
@@ -28,7 +27,7 @@ RUN composer create-project shopware/production:$SW_VERSION . \
         --no-scripts \
         --no-dev \
         --no-cache \
-        --prefer-source \
+        --prefer-dist \
     && rm -rf /var/cache/apk/* $HOME/.npm /tmp/* $HOME/.composer \
     && zip -r -9 $HOME/shopware.zip . \
         -x *.git* *node_modules* *var/cache* *docs* *.pdf *.md \

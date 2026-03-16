@@ -124,6 +124,8 @@ ssh: ##2 quick access into container
 ussh: ##2 quick access into container as root
 	$(DOCKER_ROOT_BACKEND_COMMAND)
 
+agent: ##2 chat with agent
+	docker exec -it agent ./agent.php
 
 download-vendor: ##2 downloads the vendor code for code completion
 	rm -rf $(PROJECT_DIR)/vendor

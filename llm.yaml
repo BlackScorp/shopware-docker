@@ -17,6 +17,27 @@ services:
     #environment:
     #  - OLLAMA_VULKAN=1
     restart: unless-stopped
+  agent:
+    container_name: agent
+    stop_grace_period: 1s
+    labels:
+      - "project=${PROJECT}"
+    build:
+      context: ./agent
+      dockerfile: agent.Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+        ENV: ${ENV:-dev}
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+    image: agent:latest
+    working_dir: /var/www/app
+    depends_on:
+      - llm
+    networks:
+      - network
+    volumes:
+      - shop:/var/www/html:cached
+      - ./agent/app:/var/www/app
 
 volumes:
   models:

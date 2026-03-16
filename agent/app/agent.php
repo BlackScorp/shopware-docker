@@ -46,13 +46,59 @@ function runTool($tool)
                 " -name " .
                 escapeshellarg($tool['pattern'])
             );
+        case 'project_tree':
+            return buildProjectTree('/var/www/html');
 
+        case 'search_code':
+
+            $query = escapeshellarg($tool['query']);
+            $path = escapeshellarg($tool['path'] ?? '/var/www/html');
+
+            $cmd = "rg --line-number --no-heading --color never --max-columns 200 $query $path";
+                    echo $cmd;
+            return shell_exec($cmd);
         case 'finish':
             return $tool['message'];
 
         default:
             return "unknown tool";
     }
+}
+
+function buildProjectTree($root)
+{
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+
+    $paths = [];
+
+    foreach ($iterator as $file) {
+
+        $path = str_replace($root . '/', '', $file->getPathname());
+
+        if ($file->isDir()) {
+            $paths[] = $path . "/";
+        } else {
+            $paths[] = $path;
+        }
+    }
+
+    return implode("\n", $paths);
+}
+
+function extractJson($text)
+{
+    // markdown codeblock entfernen
+    $text = preg_replace('/```json|```/', '', $text);
+
+    // erstes JSON Objekt finden
+    if (preg_match('/\{.*\}/s', $text, $m)) {
+        return $m[0];
+    }
+
+    return null;
 }
 
 echo "Agent gestartet\n";
@@ -77,8 +123,14 @@ while (true) {
 
         echo "\nLLM RAW:\n$response\n";
 
-        $tool = json_decode($response, true);
+       $json = extractJson($response);
 
+        if (!$json) {
+            echo "No JSON found\n";
+            break;
+        }
+
+        $tool = json_decode($json, true);
         if (!$tool) {
             echo "Invalid JSON from LLM\n";
             break;

@@ -35,6 +35,17 @@ finish
   "message": "final answer to user"
 }
 
+
+search_code
+{
+  "tool": "search_code",
+  "query": "UserService",
+  "path": "/var/www/html"
+}
+
+Use this tool to search for code or text inside the repository.
+Prefer this over scanning many files manually.
+
 Rules:
 
 - Always explore the repository before answering.

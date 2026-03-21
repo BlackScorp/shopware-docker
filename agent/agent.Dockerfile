@@ -1,8 +1,0 @@
-ARG PHP_VERSION
-ARG ALPINE_VERSION
-
-FROM base:PHP-${PHP_VERSION}-ALPINE-${ALPINE_VERSION}
-
-RUN apk add ripgrep
-
-CMD ["tail","-f","/dev/null"]

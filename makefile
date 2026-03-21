@@ -17,6 +17,9 @@ ENV_FILE_VERSION_MAJOR := $(ROOT_DIR)/vars/$(SW_MAJOR_VERSION).env
 # this line exports the variables from env file so docker compose up use the correct variables
 export $(shell sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)[[:space:]]*=.*/\1/p' $(ENV_FILE_BASE) $(ENV_FILE_LOCAL) $(ENV_FILE_VERSION_MAJOR) $(ENV_FILE_VERSION_EXACT) 2>/dev/null)
 
+export UID=$(shell id -u)
+export GID=$(shell id -g)
+
 PROJECT_DIR:=$(realpath $(PROJECT_DIR))
 
 USE_LLM ?= 0
@@ -125,7 +128,7 @@ ussh: ##2 quick access into container as root
 	$(DOCKER_ROOT_BACKEND_COMMAND)
 
 agent: ##2 chat with agent
-	docker exec -it agent ./agent.php
+	docker exec -it agent baer-cli
 
 download-vendor: ##2 downloads the vendor code for code completion
 	rm -rf $(PROJECT_DIR)/vendor
